@@ -49,7 +49,7 @@ export class SmplSelect2Directive implements ControlValueAccessor, OnInit, OnCha
   }
   private _value: any;
 
-  private _disabled: boolean;
+  private _disabled: boolean = true;
 
   private _onChanged: any = () => { };
   private _onTouched: any = () => { };
@@ -123,6 +123,14 @@ export class SmplSelect2Directive implements ControlValueAccessor, OnInit, OnCha
   }
 
   setDisabledState(isDisabled: boolean): void {
+    // Scrolling bug: Select2 has dynamic datasource. Select2 container is a scrollable element other than body.
+    //                Open select2 when data is empty, stay there until data is set.
+    //                Close selection panel. The container is unable to scroll.
+    // Workaround: Disable select2 to prevent opening selection panel before data is set.
+    if (!this.dataSource?.data?.length && !this.dataSource?.ajaxFn) {
+      isDisabled = true;
+    }
+
     this._disabled = isDisabled;
 
     const $element = $(this._el.nativeElement);
@@ -239,16 +247,7 @@ export class SmplSelect2Directive implements ControlValueAccessor, OnInit, OnCha
   }
 
   private _setupDataSource(): void {
-
-    // Scrolling bug: Select2 has dynamic datasource. Select2 container is a scrollable element other than body.
-    //                Open select2 when data is empty, stay there until data is set.
-    //                Close selection panel. The container is unable to scroll.
-    // Workaround: Disable select2 to prevent opening selection panel before data is set.
-    if (!this.dataSource?.data?.length && !this.dataSource?.ajaxFn) {
-      this.setDisabledState(true);
-    } else {
-      this.setDisabledState(false);
-    }
+    this.setDisabledState(false);
 
     this.dataSource = this.dataSource || {};
 
@@ -327,6 +326,7 @@ export class SmplSelect2Directive implements ControlValueAccessor, OnInit, OnCha
       $element.select2('destroy');
     }
 
+    options.disabled = this._disabled;
     $element.select2(options);
   }
 
